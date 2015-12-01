@@ -1,0 +1,38 @@
+---
+title: "Week 4 Assignment"
+author: "Harris Dupre"
+date: "November 29, 2015"
+output: html_document
+---
+
+We read in the dataset with wage information.
+
+```{r}
+data_wage = read.table(file="/Users/harrisdupre/Downloads/CPS08/cps08.csv",sep=",",header=TRUE)
+
+summary(data_wage)
+```
+
+We can see that data_wage holds information on average hourly earnings, year, whether or not the observation is a bachelor, whether or not the observation is female, and the age.
+
+Next we'll plot a histogram.
+
+```{r}
+hist(data_wage$ahe)
+```
+
+This shows us the frequency of different wages, between $10/hr and $20/hr being the most frequent wage.Next we'll create a boxplot that will compare the average hourly earnings of those who are single (denoted as 0), versus those who are married (denoted as 1).
+
+```{r}
+boxplot(ahe~bachelor,data=data_wage,main="Average Hourly Earnings vs Marital Status",xlab="Single/Married",ylab="AHE")
+```
+
+The average hourly earnings of those who are married have higher quartiles across the board, as well as a higher maximum, while maintaining the same minimum.
+
+Finally we'll plot age against average hourly earnings.
+
+```{r}
+plot(data_wage$age,data_wage$ahe)
+```
+
+We can see that as age increases, maximum average hourly earnings tend to rise as well, although the minimum values persist regardless of age.

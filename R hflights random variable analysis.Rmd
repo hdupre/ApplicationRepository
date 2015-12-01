@@ -1,0 +1,269 @@
+---
+title: "Data Science Math Final Project"
+author: "Harris Dupre"
+date: "November 27, 2015"
+output: html_document
+---
+
+Load the package hflights
+```{r}
+install.packages("hflights", repos="http://cran.rstudio.com/") 
+library("hflights")
+```
+
+Assign two quantitative variables to X and Y
+
+```{r}
+randX = hflights$DepDelay
+randY = hflights$ArrDelay
+
+summary(randX)
+summary(randY)
+```
+
+Small x is estimated as the third quartile of X, which is 9, while small y is estimated as the second quartile (median) of Y, which is 0.
+
+We can now find all the instances above and below x and y in randX and randY
+
+```{r}
+upperX = randX > 9
+upperY = randY > 0
+lowerX = randX <= 9
+lowerY = randY <= 0
+
+summary(upperX)
+summary(upperY)
+summary(lowerX)
+summary(lowerY)
+```
+
+Now to find the P(X>x), P(X<x), P(Y>y), and P(Y<y) we divide the true instances in each variable by the total number of observations.
+
+```{r}
+X_greater_than_x = 55434/227496
+
+X_less_than_x = 169157/227496
+
+Y_greater_than_y = 106920/227496
+
+Y_less_than_y = 116954/227496
+```
+
+Next, we must find P(X>x,Y>y) (or the probability that X>x AND Y>y) since the equation for P(A|B) is P(A n B)/P(B). To find the number of observations wher both X>x and Y>y are true we can use a while loop.
+
+```{r}
+i = 1
+countA = 0
+
+while(i<=227496){
+  if(is.na(upperX[i]) | is.na(upperY[i])){
+    countA = countA
+  }
+  else if(upperX[i] == TRUE & upperY[i] == TRUE){
+    countA = countA+1
+  }
+  i = i+1
+}
+
+countA
+```
+
+Now count divided by total observations gives us P(X>x n Y>y), which can then be divided by P(Y>y) to give us P(X>x|Y>y).
+
+```{r}
+Xgx_and_Ygy = countA/227496
+
+Xgx_given_Ygy = Xgx_and_Ygy / Y_greater_than_y
+```
+
+If we modify the while loop to use lowerX, we find P(X<x, Y>y).
+
+```{r}
+countB = 0
+i = 1
+
+while(i<=227496){
+  if(is.na(lowerX[i]) | is.na(upperY[i])){
+    countB = countB
+  }
+  else if(lowerX[i] == TRUE & upperY[i] == TRUE){
+    countB = countB+1
+  }
+  i = i+1
+}
+countB
+
+Xlx_and_Ygy = countB/227496
+
+Xlx_given_Ygy = Xlx_and_Ygy / Y_greater_than_y
+```
+
+
+To fill in the table of counts we find the counts of each combination. We already have the counts of x>3rd quartile and y>2nd quartile, and the count of x<3rd quartile and y>2nd quartile. So now we need two more while loops.
+
+```{r}
+countC = 0
+i = 1
+
+
+while(i<=227496){
+  if(is.na(lowerX[i]) | is.na(lowerY[i])){
+    countC = countC
+  }
+  else if(lowerX[i] == TRUE & lowerY[i] == TRUE){
+    countC = countC+1
+  }
+  i = i+1
+}
+countC
+```
+
+
+```{r}
+countD = 0
+i = 1
+
+while(i<=227496){
+  if(is.na(upperX[i]) | is.na(lowerY[i])){
+    countD = countD
+  }
+  else if(upperX[i] == TRUE & lowerY[i] == TRUE){
+    countD = countD+1
+  }
+  i = i+1
+}
+countD
+```
+
+Now we can fill in the table.
+
+```{r}
+counttable = matrix(c(countC,countB,(countC+countB),countD,countA,(countD+countA),(countC+countD),(countB+countA),(countA+countB+countC+countD)),ncol=3, nrow=3,byrow=TRUE)
+colnames(counttable) = c("<=2d quartile",">2d quartile","Total")
+rownames(counttable) = c('<=3d quartile', '>3d quartile','Total')
+counttable.table = as.table(counttable)
+counttable.table
+```
+
+We cannot see that randX affects randY so splitting the data this way makes them independent.
+
+Now to test that P(A|B) = P(A)P(B) we must add the counts of those above the 3d quartile for x and above the 2d quartile for y
+
+```{r}
+A = countA + countD
+B = countA + countB
+
+
+ProbA = A/227496
+ProbB = B/227496
+
+ProbAgivenB = (countA/227496)/ProbB
+
+ProbAgivenB == ProbA*ProbB
+```
+
+So P(A|B) =/= P(A)P(B)
+
+Now we run a Chi-squared test on randX and randY
+
+```{r}
+chisq.test(randX,randY)
+```
+
+The p-value is lower that significance level 0.05, so we must reject the null hypothesis, meaning the variables are independent.
+
+Descriptive and inferential statistics
+
+Some statstics functions will not run if there are NA values in the variables, so we create new variables using na.omit(). We then use summary() to get quartiles and means, sd() for the standard deviations, and plot() for a scatter plot
+
+```{r}
+randXnoNA = na.omit(randX)
+randYnoNA = na.omit(randY)
+
+summary(randX)
+summary(randY)
+
+sd(randXnoNA)
+sd(randYnoNA)
+
+plot(randX, randY, xlab="Random Variable X", ylab="Random Variable Y")
+```
+
+Next we can run a t-test to find the difference of the means of randX and randY with 95% confidence.
+
+```{r}
+t.test(randX, randY)
+```
+
+This tells us that there is 95% confidence that the difference in the means of X and Y will be between 2.176342 and 2.52489.2We will place randX and randY in a data frame, create a correlation matrix, and test the hypothesis that the correlation between the variables is 0.
+
+```{r}
+data = data.frame(randX, randY)
+
+M = cor(data,use="complete")
+
+cor.test(randX,randY,method=c("pearson"),conf.level=0.99)
+```
+
+The outcome of this test means we must reject the hypothesis that correlation is 0 and the 99 percent confidence interval gives us a high likelihood of correlation.
+
+Linear algebra and correlations
+
+```{r}
+M_inverse = solve(M)
+
+M %*% M_inverse
+
+M_inverse %*% M
+```
+
+We see that multipying the correlation matrix by the precision matrix (and vice versa) gives us an identity matrix.
+
+Calculus-Based probability and statistics
+
+First we must shift randX up so that the minimum value is above zero. We can do this with a while loops that adds 34 (since -33 is the minimum value) to each observation.
+
+```{r}
+i=0
+while(i<=227496){
+  randX[i] = randX[i]+34
+  i=i+1
+}
+```
+
+We then load the MASS package.
+```{r}
+library(MASS)
+```
+
+We use the fitdistr() function and specify "exponential". The variable cannot have any NAs, so we use na.omit() on randX again.
+
+```{r}
+randX = na.omit(randX)
+
+fitdistr(randX,"exponential")
+```
+
+From here we get the rate and can use the rexp() function.
+
+```{r}
+sampledist = rexp(1000,rate=0.0230176344)
+hist(sampledist)
+hist(randX)
+```
+
+Upon comparing the histograms we see the same positive skew as in the original variable, but the estimations and scales are quite different
+
+Now we will find the 5th and 9th percentile using the cumulative distribution function, the 95 percent confidence interval from the emirical data, and the empirical 5th and 95th percentile of the data.
+
+```{r}
+qexp(0.05, rate=0.0230176344)
+
+qexp(0.95, rate=0.0230176344)
+
+qnorm(0.95,mean(randX),sd(randX))
+
+quantile(randX, c(0.05,0.95))
+```
+
+This tells us that there are some differences between the positively skewed original data, and the exponential equation that we can derive from fitdistr() and rexp().

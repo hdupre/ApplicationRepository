@@ -1,0 +1,120 @@
+---
+title: "R Bridge Final Project"
+author: "Harris Dupre"
+date: "November 28, 2015"
+output: html_document
+---
+
+The hflights package contains data regarding flights out of Houston. This project is interested on the correlations between the different available time variables. For example, does longer air time correlate to a longer arrival delay?
+
+We install the package hflights with the command:
+
+```{r}
+install.packages("hflights", repos="http://cran.rstudio.com/") 
+library("hflights")
+```
+
+
+
+We then use the package to create a new data frame called "data" that we can alter at will.
+
+
+
+```{r}
+data = data.frame(hflights)
+```
+
+```{r}
+summary(data)
+```
+
+
+
+We can see columns devoted to times (air time, arrival delay time, etc.), columns devoted to identifying the flight (carrier, flight number, tail number), and other information (destination, distance, whether it was cancelled or diverted).
+
+We are interested in the variables that affect trip time, and therefore will remove many of the variables not related to time.
+
+
+
+```{r}
+data = subset(data, select = -c(UniqueCarrier,FlightNum,TailNum,Cancelled,CancellationCode,Diverted,Origin,Dest,DayOfWeek))
+```
+
+
+
+We would then like to clean up the date portion of the data. We can create one column that holds an easily readable date and delete the others. We also remove any rows that contain an "NA" so that they don't cause errors down the line.
+
+
+
+```{r}
+data$Date = paste(month.abb[data$Month], data$Day,data$Year,sep="/")
+
+data = subset(data, select = -c(Year,Month,DayofMonth))
+
+data = na.omit(data)
+```
+
+
+
+Now if we take a look at the first ten lines of data we can see that that each column is related to time (with the exception of Distance), and the last column holds easily readable dates. We can also summarize some important variables: Distance, AirTime, and ActualElapsedTime.
+
+
+
+```{r}
+head(data,10)
+
+summary(data$Distance)
+summary(data$AirTime)
+summary(data$ActualElapsedTime)
+```
+
+
+
+Let us begin by plotting air time as related to distance.
+
+
+
+```{r}
+plot(data$Distance,data$AirTime,xlab="Distance",ylab="Air Time")
+```
+
+
+
+The result is as expected. Distance has a positive correlation with air time.
+
+Arrival delay is highly inconvenient for travellers since there are often connecting flights or trains waiting at the destination.
+
+Let's first attempt to see if there is a correlation between arrival delay and departure delay.
+
+```{r}
+plot(data$DepDelay,data$ArrDelay,xlab="Departure Delay (in minutes)",ylab="Arrival Delay (in minutes)")
+```
+
+
+
+Again, as expected there is a strong positive correlation between a delayed departure and delayed arrival.
+
+Let's try something a bit less obvious. Does a longer time in the air correlate to a higher arrival delay?
+
+
+
+
+```{r}
+plot(data$AirTime,data$ArrDelay,xlab="Air Time (in minutes)",ylab="Arrival Delay (in minutes)")
+```
+
+
+There is no noticeable correlation here.
+
+Finally, let's try to see if there is a correlation between total time on the ground (which will be found by subtracting air time from total time) and arrival delay.
+
+
+```{r}
+plot((data$ActualElapsedTime-data$AirTime),data$ArrDelay,xlab="Ground Time (in minutes)",ylab="Arrival Delay (in minutes)")
+```
+
+
+We can see a slight positive correlation here. Longer taxi lines before take off and after landing can certainly contribute to arrival delays.
+
+
+We can therefore conclude, from the time variables available to us, that the arrival delay has the strongest positive correlation with departure delay, but also contains a slight positive correlation with ground time, and little or no correlation with air time.
