@@ -24,7 +24,7 @@ def main():
 
 # Change password
 def get_credentials():
-    return {'user':'root','password':'titmpass54'}
+    return {'user':'root','password':'********'}
 
 class Iris:
     def __init__(self,creds,dbname='data602',new=True):
